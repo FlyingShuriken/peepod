@@ -1,1 +1,4 @@
 /venv/
+/songs/
+!./songs/SongsGoHere
+
