@@ -1,10 +1,10 @@
-import discord
 from pytube import Playlist, YouTube
 from pygame import mixer
-import json
+from random import shuffle
+from json import load
 import ffmpeg
-import time
-import os
+from time import time, mktime, localtime, sleep
+from os import remove
 from discord_rpc import rpc
 
 
@@ -13,7 +13,7 @@ class Songs:
         self.status = None
         self.current_song_position = "1"
         with open("settings.json", "r") as sett:
-            sett = json.load(sett)
+            sett = load(sett)
             self.client = sett["client_id"]
             if playlist_name in list(sett["playlist"].keys()):
                 self.playlist_url = sett["playlist"][playlist_name]
@@ -27,8 +27,18 @@ class Songs:
         yt.streams.filter(progressive=False, file_extension='wav')
 
     def first_play(self):
-        plyt = Playlist(self.playlist_url)
-        yt = YouTube("", on_complete_callback=self.convert)
+        self.plyt = Playlist(self.playlist_url)
+        self.now = 0
+        self.playlist = list(self.plyt.videos)
+        shuffle(self.playlist)
+        yt = self.playlist[self.now]
+        yt.register_on_complete_callback(self.convert)
+        self.author = yt.author
+        yt.streams.filter(type="audio").first().download(output_path="songs")
+
+    def after_play(self):
+        yt = self.playlist[self.now]
+        yt.register_on_complete_callback(self.convert)
         self.author = yt.author
         yt.streams.filter(type="audio").first().download(output_path="songs")
 
@@ -43,18 +53,14 @@ class Songs:
         mixer.init()
         mixer.music.load(path)
         mixer.music.play()
-        start = time.time() + 5
+        start = time() + 5
         duration = float(ffmpeg.probe(path)["format"]["duration"])
-        rpc_obj = rpc.DiscordIpcClient.for_platform(self.client_id)
-        start_time = time.mktime(time.localtime())
+        self.rpc_obj = rpc.DiscordIpcClient.for_platform(self.client)
+        start_time = mktime(localtime())
         while True:
-            time.sleep(0.5)
-            if time.time() > (start + duration):
-                print("done")
-                mixer.quit()
-                time.sleep(1)
-                os.remove(f"{path[:-4]}.mp4")
-                os.remove(f"{path[:-4]}.wav")
+            sleep(0.5)
+            if time() > (start + duration):
+                self.stop(path=path)
             else:
                 activity = {
                     "state": self.author,  # anything you like
@@ -69,18 +75,22 @@ class Songs:
                         "large_image": "peepoo_s_personal_ai"  # must match the image key
                     }
                 }
-                rpc_obj.set_activity(activity)
+                self.rpc_obj.set_activity(activity)
 
     def pause(self):
         mixer.music.pause()
 
-    def stop(self):
-        mixer.music.stop()
+    def stop(self,path):
+        mixer.quit()
+        remove(f"{path[:-4]}.mp4")
+        remove(f"{path[:-4]}.wav")
+        self.now += 1
+        self.rpc_obj.close()
+        self.after_play()
 
     def resume(self):
         mixer.music.unpause()
 
 
-while True:
-    Songs("deep")
+Songs("deep")
 input()
