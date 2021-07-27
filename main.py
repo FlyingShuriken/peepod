@@ -40,6 +40,7 @@ class Songs:
         yt = self.playlist[self.now]
         yt.register_on_complete_callback(self.convert)
         self.author = yt.author
+        print(yt.title,yt.watch_url)
         yt.streams.filter(type="audio").first().download(output_path="songs")
 
     def convert(self, stream=None, path=None):
@@ -53,20 +54,20 @@ class Songs:
         mixer.init()
         mixer.music.load(path)
         mixer.music.play()
-        start = time() + 5
+        start = mktime(localtime())
         duration = float(ffmpeg.probe(path)["format"]["duration"])
         self.rpc_obj = rpc.DiscordIpcClient.for_platform(self.client)
-        start_time = mktime(localtime())
+        end_time = int(round((mktime(localtime()) + duration),0))
         while True:
             sleep(0.5)
-            if time() > (start + duration):
+            if time() > end_time:
                 self.stop(path=path)
             else:
                 activity = {
                     "state": self.author,  # anything you like
                     "details": stream.title,  # anything you like
                     "timestamps": {
-                        "start": start_time
+                        "end": end_time
                     },
                     "assets": {
                         "small_text": "is playing a song",  # anything you like
