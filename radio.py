@@ -8,7 +8,7 @@ from os import remove
 from discord_rpc import rpc
 
 
-class Songs:
+class Radio:
     def __init__(self, playlist_name):
         self.status = None
         self.current_song_position = "1"
@@ -92,5 +92,5 @@ class Songs:
         mixer.music.unpause()
 
 
-Songs("deep")
+Radio("deep")
 input()
