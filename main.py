@@ -7,7 +7,6 @@ import time
 import os
 from discord_rpc import rpc
 
-client_id = '869088172800376853'
 
 class Songs:
     def __init__(self, playlist_name):
