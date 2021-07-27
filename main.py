@@ -40,7 +40,6 @@ class Songs:
         yt = self.playlist[self.now]
         yt.register_on_complete_callback(self.convert)
         self.author = yt.author
-        print(yt.title,yt.watch_url)
         yt.streams.filter(type="audio").first().download(output_path="songs")
 
     def convert(self, stream=None, path=None):
