@@ -1,0 +1,4 @@
+pytube
+ffmpeg-python
+pygame
+discord
