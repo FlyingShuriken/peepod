@@ -70,7 +70,8 @@ class Radio:
                 "small_image": "is_playing_a_song",
                 "large_text": "PeePod",
                 "large_image": "peepoo_s_personal_ai"
-            }
+            },
+            "buttons": [{"label":"View This Project on Github","url":"https://github.com/FlyingShuriken/peepod"}]
         }
         self.rpc_obj.set_activity(activity)
 
