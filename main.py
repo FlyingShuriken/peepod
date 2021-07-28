@@ -13,9 +13,9 @@ radio_controller = sett["radio_controller"]
 @tasks.loop(seconds=0.5)
 async def check_if_song_end():
     lRadio = bot.base_radio
+    print(time(),lRadio.end_time)
     if time() > lRadio.end_time:
         lRadio.stop(path=lRadio.radio_path)
-        check_if_song_end.stop()
 
 @bot.event
 async def on_message(message):
