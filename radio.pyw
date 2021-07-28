@@ -18,13 +18,10 @@ class Radio:
             if playlist_name in list(sett["playlist"].keys()):
                 self.playlist_url = sett["playlist"][playlist_name]
                 self.first_play()
-            else:
-                self.video_url = playlist_name
-                self.single_song()
 
-    def single_song(self):
-        yt = YouTube(self.video_url, on_complete_callback=self.play)
-        yt.streams.filter(progressive=False, file_extension='wav')
+    def single_song(self,link):
+        yt = YouTube(link, on_complete_callback=self.convert)
+        self.playlist.insert((self.now+1), yt)
 
     def first_play(self):
         self.plyt = Playlist(self.playlist_url)
@@ -78,16 +75,49 @@ class Radio:
     def pause(self):
         mixer.music.pause()
 
-    def stop(self,path):
-        mixer.quit()
-        remove(f"{path[:-4]}.mp4")
-        remove(f"{path[:-4]}.wav")
-        self.now += 1
-        self.rpc_obj.close()
-        if self.status != "Stop":
-            self.after_play()
+    def continue_play(self):
+        mixer.music.play()
+
+    def stop(self,path,next_when_loop=None):
+        if self.status == "loop":
+            mixer.quit()
+            remove(f"{path[:-4]}.mp4")
+            remove(f"{path[:-4]}.wav")
+            if next_when_loop:
+                self.now += 1
+            self.rpc_obj.close()
+            if self.status != "stop":
+                self.after_play()
+        else:
+            mixer.quit()
+            remove(f"{path[:-4]}.mp4")
+            remove(f"{path[:-4]}.wav")
+            self.now += 1
+            self.rpc_obj.close()
+            if self.status != "stop":
+                self.after_play()
 
     def resume(self):
         mixer.music.unpause()
 
+    def next(self,path):
+        self.stop(path,True)
 
+    def previous(self,path):
+        mixer.quit()
+        remove(f"{path[:-4]}.mp4")
+        remove(f"{path[:-4]}.wav")
+        self.now -= 1
+        self.rpc_obj.close()
+        if self.status != "Stop":
+            self.after_play()
+
+    def shuffle(self):
+        self.current_song_position = 0
+        shuffle(self.playlist)
+
+    def loop(self):
+        self.status = "loop"
+
+    def unloop(self):
+        self.status = ""

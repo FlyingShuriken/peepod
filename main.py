@@ -13,7 +13,6 @@ radio_controller = sett["radio_controller"]
 @tasks.loop(seconds=0.5)
 async def check_if_song_end():
     lRadio = bot.base_radio
-    print(time(),lRadio.end_time)
     if time() > lRadio.end_time:
         lRadio.stop(path=lRadio.radio_path)
 
@@ -28,20 +27,70 @@ async def on_raw_reaction_add(payload):
         message = payload.message_id
         if sett["base_msg"][str(message)] == "playlist":
             reaction = payload.emoji
-            reaction_ = {"1️⃣": "\u0031", "2️⃣": "\u0032", "3️⃣": "\u0033", "4️⃣": "\u0034"}
-            playlist_name = sett["reaction"][reaction_[reaction.name]]
-            bot.base_radio = Radio(playlist_name)
-            check_if_song_end.start()
+            playlist_reaction = {"1️⃣": "\u0031", "2️⃣": "\u0032", "3️⃣": "\u0033", "4️⃣": "\u0034"}
+            radio_reaction = {"🔂":"loop","🔀":"shuffle","⏸":"pause","⏪":"previous","⏩":"next"}
+            if reaction.name in list(playlist_reaction.keys()):
+                playlist_name = sett["reaction"][playlist_reaction[reaction.name]]
+                bot.base_radio = Radio(playlist_name)
+                check_if_song_end.start()
+            elif reaction.name in list(radio_reaction.keys()):
+                if radio_reaction[reaction.name] in ["loop","pause"]:
+                    if radio_reaction[reaction.name] == "loop":
+                        bot.base_radio.loop()
+                    elif radio_reaction[reaction.name] == "pause":
+                        bot.base_radio.pause()
+                else:
+                    if radio_reaction[reaction.name] == "shuffle":
+                        bot.base_radio.shuffle()
+                    elif radio_reaction[reaction.name] == "previous":
+                        bot.base_radio.previous(bot.base_radio.radio_path)
+                    elif radio_reaction[reaction.name] == "next":
+                        bot.base_radio.next(bot.base_radio.radio_path)
+                    channel = bot.get_channel(channel_id)
+                    message = await channel.fetch_message(radio_controller)
+                    await message.clear_reaction("🔀")
+                    await message.clear_reaction("⏪")
+                    await message.clear_reaction("⏩")
+                    await message.add_reaction("🔀")
+                    await message.add_reaction("⏪")
+                    await message.add_reaction("⏩")
+
 
 @bot.event
 async def on_raw_reaction_remove(payload):
     member = bot.get_user(payload.user_id)
     if payload.channel_id == channel_id and member.bot == False:
         message = payload.message_id
+        reaction = payload.emoji
         if sett["base_msg"][str(message)] == "playlist":
-            bot.base_radio.status = "Stop"
-            bot.base_radio.stop(bot.base_radio.radio_path)
-            check_if_song_end.stop()
+            radio_reaction = {"🔂": "loop", "⏸": "pause"}
+            if reaction.name in list(radio_reaction.keys()):
+                if radio_reaction[reaction.name] == "loop":
+                    bot.base_radio.unloop()
+                elif radio_reaction[reaction.name] == "pause":
+                    bot.base_radio.reseme()
+            else:
+                bot.base_radio.status = "stop"
+                bot.base_radio.stop(bot.base_radio.radio_path)
+                check_if_song_end.stop()
+                channel = bot.get_channel(payload.channel_id)
+                message = await channel.fetch_message(radio_controller)
+                await message.clear_reaction("🔂")
+                await message.clear_reaction("⏸")
+                await message.clear_reaction("🔀")
+                await message.clear_reaction("⏪")
+                await message.clear_reaction("⏩")
+
+                await message.add_reaction("🔂")
+                await message.add_reaction("⏸")
+                await message.add_reaction("🔀")
+                await message.add_reaction("⏪")
+                await message.add_reaction("⏩")
+
+@bot.command()
+async def np(ctx,link):
+    bot.base_radio.single_song(link)
+    await ctx.message.delete()
 
 @bot.command()
 async def send(ctx):
@@ -55,10 +104,17 @@ async def send(ctx):
 @bot.command()
 async def add(ctx):
     message = await ctx.channel.fetch_message(radio_controller)
-    await message.add_reaction("1️⃣")
-    await message.add_reaction("2️⃣")
-    await message.add_reaction("3️⃣")
-    await message.add_reaction("4️⃣")
+    await message.clear_reaction("🔂")
+    await message.clear_reaction("⏸")
+    await message.clear_reaction("🔀")
+    await message.clear_reaction("⏪")
+    await message.clear_reaction("⏩")
+
+    await message.add_reaction("🔂")
+    await message.add_reaction("⏸")
+    await message.add_reaction("🔀")
+    await message.add_reaction("⏪")
+    await message.add_reaction("⏩")
 
 
 bot.run(sett["token"])
