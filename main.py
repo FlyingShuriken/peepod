@@ -68,7 +68,7 @@ async def on_raw_reaction_remove(payload):
                 if radio_reaction[reaction.name] == "loop":
                     bot.base_radio.unloop()
                 elif radio_reaction[reaction.name] == "pause":
-                    bot.base_radio.reseme()
+                    bot.base_radio.resume()
             else:
                 bot.base_radio.status = "stop"
                 bot.base_radio.stop(bot.base_radio.radio_path)
