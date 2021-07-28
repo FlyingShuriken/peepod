@@ -52,6 +52,7 @@ class Radio:
     def play(self, stream=None, path=None):
         mixer.init()
         mixer.music.load(path)
+        mixer.music.set_volume(0.05)
         mixer.music.play()
         start = mktime(localtime())
         duration = float(ffmpeg.probe(path)["format"]["duration"])
@@ -64,7 +65,7 @@ class Radio:
             else:
                 activity = {
                     "state": self.author,  # anything you like
-                    "details": stream.title,  # anything you like
+                    "details": f"{stream.title.replace('/','')}",  # anything you like
                     "timestamps": {
                         "end": end_time
                     },
@@ -92,5 +93,5 @@ class Radio:
         mixer.music.unpause()
 
 
-Radio("deep")
+Radio("i tot")
 input()
