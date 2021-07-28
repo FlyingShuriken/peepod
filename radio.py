@@ -3,14 +3,14 @@ from pygame import mixer
 from random import shuffle
 from json import load
 import ffmpeg
-from time import time, mktime, localtime, sleep
+from time import mktime, localtime
 from os import remove
 from discord_rpc import rpc
 
 
 class Radio:
     def __init__(self, playlist_name):
-        self.status = None
+        self.status = ""
         self.current_song_position = "1"
         with open("settings.json", "r") as sett:
             sett = load(sett)
@@ -52,31 +52,27 @@ class Radio:
     def play(self, stream=None, path=None):
         mixer.init()
         mixer.music.load(path)
-        mixer.music.set_volume(0.05)
+        mixer.music.set_volume(0.2)
         mixer.music.play()
         start = mktime(localtime())
         duration = float(ffmpeg.probe(path)["format"]["duration"])
         self.rpc_obj = rpc.DiscordIpcClient.for_platform(self.client)
-        end_time = int(round((mktime(localtime()) + duration),0))
-        while True:
-            sleep(0.5)
-            if time() > end_time:
-                self.stop(path=path)
-            else:
-                activity = {
-                    "state": self.author,  # anything you like
-                    "details": f"{stream.title.replace('/','')}",  # anything you like
-                    "timestamps": {
-                        "end": end_time
-                    },
-                    "assets": {
-                        "small_text": "is playing a song",  # anything you like
-                        "small_image": "is_playing_a_song",  # must match the image key
-                        "large_text": "PeePod",  # anything you like
-                        "large_image": "peepoo_s_personal_ai"  # must match the image key
-                    }
-                }
-                self.rpc_obj.set_activity(activity)
+        self.end_time = int(round((mktime(localtime()) + duration),0))
+        self.radio_path = path
+        activity = {
+            "state": self.author,
+            "details": f"{stream.title.replace('/','')}",
+            "timestamps": {
+                "end": self.end_time
+            },
+            "assets": {
+                "small_text": "is playing a song",
+                "small_image": "is_playing_a_song",
+                "large_text": "PeePod",
+                "large_image": "peepoo_s_personal_ai"
+            }
+        }
+        self.rpc_obj.set_activity(activity)
 
     def pause(self):
         mixer.music.pause()
@@ -87,11 +83,10 @@ class Radio:
         remove(f"{path[:-4]}.wav")
         self.now += 1
         self.rpc_obj.close()
-        self.after_play()
+        if self.status != "Stop":
+            self.after_play()
 
     def resume(self):
         mixer.music.unpause()
 
 
-Radio("i tot")
-input()
