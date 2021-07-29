@@ -1,4 +1,5 @@
 pytube
 ffmpeg-python
 pygame
-discord
+discord.py
+discord-rpc
